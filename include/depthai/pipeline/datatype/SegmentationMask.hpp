@@ -197,7 +197,7 @@ class SegmentationMask : public Buffer, public ProtoSerializable {
     ProtoSerializable::SchemaPair serializeSchema() const override;
 #endif
 
-    DEPTHAI_SERIALIZE(SegmentationMask, Buffer::ts, Buffer::tsDevice, Buffer::sequenceNum, transformation, width, height, labels);
+    DEPTHAI_SERIALIZE(SegmentationMask, Buffer::ts, Buffer::tsDevice, Buffer::tsSystem, Buffer::sequenceNum, transformation, width, height, labels);
 };
 
 }  // namespace dai

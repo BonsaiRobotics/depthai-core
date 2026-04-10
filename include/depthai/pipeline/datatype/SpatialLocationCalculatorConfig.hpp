@@ -245,7 +245,8 @@ class SpatialLocationCalculatorConfig : public Buffer {
                       useSegmentation,
                       segmentationPassthrough,
                       bBoxScaleFactor,
-                      config);
+                      config,
+                      Buffer::tsSystem);
 };
 
 }  // namespace dai

@@ -190,6 +190,7 @@ class SpatialImgDetections : public ImgDetectionsT<SpatialImgDetection>, public 
                       Base::Buffer::sequenceNum,
                       Base::Buffer::ts,
                       Base::Buffer::tsDevice,
+                      Base::Buffer::tsSystem,
                       detections,
                       transformation,
                       segmentationMaskWidth,
