@@ -432,7 +432,7 @@ int testFsync(float targetFps, struct TestThresholds thresholds) {
                 if (prevFrameInfos.find(name) != prevFrameInfos.end()) {
                     auto prevFrameInfo = prevFrameInfos.at(name);
                     std::cout << "\t DIFF Seqnum: " << frame->getSequenceNum() - prevFrameInfo.seqNum << "\n";
-                    std::cout << "\t DIFF Timestamp: " << std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(frame->getTimestampSystem(dai::CameraExposureOffset::END).value().time_since_epoch()).count() - td::chrono::duration_cast<std::chrono::microseconds>(prevFrameInfo.ts.time_since_epoch()).count()) << "\n";
+                    std::cout << "\t DIFF Timestamp: " << std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(frame->getTimestampSystem(dai::CameraExposureOffset::END).value().time_since_epoch()).count() - std::chrono::duration_cast<std::chrono::microseconds>(prevFrameInfo.ts.time_since_epoch()).count()) << "\n";
                     prevFrameInfos.at(name) = FrameInfo{frame->getTimestampSystem(dai::CameraExposureOffset::END).value(), frame->getSequenceNum()};
                 } else {
                     prevFrameInfos.emplace(name, FrameInfo{frame->getTimestampSystem(dai::CameraExposureOffset::END).value(), frame->getSequenceNum()});
