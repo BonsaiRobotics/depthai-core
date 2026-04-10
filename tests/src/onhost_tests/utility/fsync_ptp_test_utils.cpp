@@ -120,6 +120,10 @@ dai::Node::Output* createPipeline(std::shared_ptr<dai::Pipeline> pipeline,
     //     height = ;
     // }
     auto output = cam->requestOutput(std::make_pair(width, height), dai::ImgFrame::Type::NV12, dai::ImgResizeMode::STRETCH);
+
+    if (syncType == SyncType::PTP) {
+        cam->initialControl.setManualExposure(2000, 400);
+    }
     return output;
 }
 
