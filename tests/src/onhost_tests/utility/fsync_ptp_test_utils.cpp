@@ -123,14 +123,14 @@ dai::Node::Output* createPipeline(std::shared_ptr<dai::Pipeline> pipeline,
     return output;
 }
 
-std::shared_ptr<dai::node::Sync> createSyncNode(std::shared_ptr<dai::Pipeline>& masterPipeline,
+std::shared_ptr<dai::node::SyncSystem> createSyncNode(std::shared_ptr<dai::Pipeline>& masterPipeline,
                                                 std::map<std::string, dai::Node::Output*>& masterNode,
                                                 const std::string& masterName,
                                                 std::chrono::nanoseconds syncThreshold,
                                                 std::vector<std::string>& outputNames,
                                                 std::map<std::string, std::map<std::string, std::shared_ptr<dai::MessageQueue>>>& slaveQueues,
                                                 std::map<std::string, std::shared_ptr<dai::InputQueue>>& inputQueues) {
-    auto sync = masterPipeline->create<dai::node::Sync>();
+    auto sync = masterPipeline->create<dai::node::SyncSystem>();
     sync->setRunOnHost(true);
     sync->setSyncThreshold(syncThreshold);
     for(auto p : masterNode) {
@@ -405,12 +405,14 @@ int testFsync(float targetFps, struct TestThresholds thresholds) {
             REQUIRE_MSG(size_t(latestFrameGroup.value()->getNumMessages()) == outputNames.size(),
                         "Number of messages received doesn't match number of outputs");
 
-            using ts_type = std::chrono::time_point<std::chrono::steady_clock>;
+            using ts_type = std::chrono::time_point<std::chrono::system_clock>;
             std::map<std::string, ts_type> tsValues;
             for(auto name : outputNames) {
                 auto frame = latestFrameGroup.value()->get<dai::ImgFrame>(name);
                 REQUIRE_MSG(frame != nullptr, "Frame pointer is null");
-                tsValues.emplace(name, frame->getTimestamp(dai::CameraExposureOffset::END));
+                auto optTs = frame->getTimestampSystem(dai::CameraExposureOffset::END);
+                REQUIRE_MSG(optTs.has_value(), "Timestamp is not available");
+                tsValues.emplace(name, optTs.value());
             }
 
             auto compFunct = [](const std::pair<std::string, ts_type>& p1, const std::pair<std::string, ts_type>& p2) -> bool { return p1.second < p2.second; };

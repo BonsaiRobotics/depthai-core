@@ -40,7 +40,7 @@ dai::Node::Output* createPipeline(std::shared_ptr<dai::Pipeline> pipeline,
                                   SyncType syncType,
                                   std::optional<dai::ExternalFrameSyncRole> role);
 
-std::shared_ptr<dai::node::Sync> createSyncNode(std::shared_ptr<dai::Pipeline>& masterPipeline,
+std::shared_ptr<dai::node::SyncSystem> createSyncNode(std::shared_ptr<dai::Pipeline>& masterPipeline,
                                                 std::map<std::string, dai::Node::Output*>& masterNode,
                                                 const std::string& masterName,
                                                 std::chrono::nanoseconds syncThreshold,
