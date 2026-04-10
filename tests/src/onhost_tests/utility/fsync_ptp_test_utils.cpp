@@ -405,18 +405,38 @@ int testFsync(float targetFps, struct TestThresholds thresholds) {
             break;
         }
 
+        struct FrameInfo {
+            std::chrono::time_point<std::chrono::system_clock> ts;
+            int64_t seqNum;
+        };
+        std::map<std::string, FrameInfo> prevFrameInfos;
+
         if(latestFrameGroup.has_value()) {
             REQUIRE_MSG(size_t(latestFrameGroup.value()->getNumMessages()) == outputNames.size(),
                         "Number of messages received doesn't match number of outputs");
 
             using ts_type = std::chrono::time_point<std::chrono::system_clock>;
             std::map<std::string, ts_type> tsValues;
+            std::cout << "Latest frame group:\n";
             for(auto name : outputNames) {
                 auto frame = latestFrameGroup.value()->get<dai::ImgFrame>(name);
                 REQUIRE_MSG(frame != nullptr, "Frame pointer is null");
                 auto optTs = frame->getTimestampSystem(dai::CameraExposureOffset::END);
                 REQUIRE_MSG(optTs.has_value(), "Timestamp is not available");
                 tsValues.emplace(name, optTs.value());
+
+                std::cout << "Frame " << name << "\n";
+                std::cout << "\t Seqnum: " << frame->getSequenceNum() << "\n";
+                std::cout << "\t Timestamp: " << std::to_string(frame->getTimestampSystem(dai::CameraExposureOffset::END).value().time_since_epoch().count()) << "\n";
+
+                if (prevFrameInfos.find(name) != prevFrameInfos.end()) {
+                    auto prevFrameInfo = prevFrameInfos.at(name);
+                    std::cout << "\t DIFF Seqnum: " << frame->getSequenceNum() - prevFrameInfo.seqNum << "\n";
+                    std::cout << "\t DIFF Timestamp: " << std::to_string(frame->getTimestampSystem(dai::CameraExposureOffset::END).value().time_since_epoch().count() - prevFrameInfo.ts.time_since_epoch().count()) << "\n";
+                    prevFrameInfos.at(name) = FrameInfo{frame->getTimestampSystem(dai::CameraExposureOffset::END).value(), frame->getSequenceNum()};
+                } else {
+                    prevFrameInfos.emplace(name, FrameInfo{frame->getTimestampSystem(dai::CameraExposureOffset::END).value(), frame->getSequenceNum()});
+                }
             }
 
             auto compFunct = [](const std::pair<std::string, ts_type>& p1, const std::pair<std::string, ts_type>& p2) -> bool { return p1.second < p2.second; };
