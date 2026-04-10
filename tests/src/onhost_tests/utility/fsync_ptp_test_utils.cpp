@@ -379,6 +379,12 @@ int testFsync(float targetFps, struct TestThresholds thresholds) {
         }
     } threadsGuard{running, threads};
 
+
+    struct FrameInfo {
+        std::chrono::time_point<std::chrono::system_clock> ts;
+        int64_t seqNum;
+    };
+    std::map<std::string, FrameInfo> prevFrameInfos;
     while(true) {
         while(queue->has()) {
             auto syncData = queue->get();
@@ -404,12 +410,6 @@ int testFsync(float targetFps, struct TestThresholds thresholds) {
             running.store(false);
             break;
         }
-
-        struct FrameInfo {
-            std::chrono::time_point<std::chrono::system_clock> ts;
-            int64_t seqNum;
-        };
-        std::map<std::string, FrameInfo> prevFrameInfos;
 
         if(latestFrameGroup.has_value()) {
             REQUIRE_MSG(size_t(latestFrameGroup.value()->getNumMessages()) == outputNames.size(),
