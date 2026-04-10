@@ -549,7 +549,8 @@ TEST_CASE("Test setImuRotation does not affect affine calibration path") {
     // ACCELEROMETER_UNCALIBRATED goes through rotateImuVector (extrinsics rotation) but
     // ignores imuCalibrationParams (affine calibration). Verify that setting only the
     // affine calibration matrix does not alter ACCELEROMETER_UNCALIBRATED readings.
-    const auto baselineUncalib = captureAverageAccelWithImuRotation(kIdentityRotation);
+    const auto baselineUncalib =
+        captureAverageAccelWithImuRotation(kIdentityRotation, dai::IMUSensor::ACCELEROMETER_UNCALIBRATED);
 
     const auto withAffineOnly = captureAverageAccelerometer(dai::IMUSensor::ACCELEROMETER_UNCALIBRATED,
                                                              makeAxisRotationCalibration({
