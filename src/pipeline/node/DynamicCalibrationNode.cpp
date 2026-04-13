@@ -185,23 +185,18 @@ void DclUtils::convertDclCalibrationToDai(CalibrationHandler& calibHandler,
     //   p_B = R_B * p_ref + t_B  =>  p_B = R_B * R_A^T * p_A + t_B - R_B * R_A^T * t_A
     // R_rel = R_B * R_A^T
     // t_rel = t_B - R_rel * t_A
-    std::vector<std::vector<float>> R_A_inv(3, std::vector<float>(3, 0.0f));
-    for(int i = 0; i < 3; ++i) {
-        for(int j = 0; j < 3; ++j) {
-            R_A_inv[i][j] = R_A[j][i];  // transpose of rotation = inverse
-        }
-    }
+    std::vector<std::vector<float>> R_A_inv;
+    matrix::matInv(R_A, R_A_inv);
 
     auto rotationMatrix = matrix::matMul(R_B, R_A_inv);
 
     // t_rel = t_B - R_rel * t_A, converted from meters to cm
+    const std::vector<float> tA = {static_cast<float>(tvecA[0]), static_cast<float>(tvecA[1]), static_cast<float>(tvecA[2])};
+    const std::vector<float> R_rel_tA = matrix::matVecMul(rotationMatrix, tA);
+
     std::vector<float> translation(3, 0.0f);
     for(int i = 0; i < 3; ++i) {
-        float R_rel_dot_tA = 0.0f;
-        for(int j = 0; j < 3; ++j) {
-            R_rel_dot_tA += rotationMatrix[i][j] * static_cast<float>(tvecA[j]);
-        }
-        translation[i] = (static_cast<float>(tvecB[i]) - R_rel_dot_tA) * 100.0f;  // meters to cm
+        translation[i] = (static_cast<float>(tvecB[i]) - R_rel_tA[i]) * 100.0f;  // meters to cm
     }
 
     dcl::distortion_t distortionA;
