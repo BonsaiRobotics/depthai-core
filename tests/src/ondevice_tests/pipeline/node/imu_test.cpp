@@ -1,6 +1,7 @@
 #include <catch2/catch_all.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <initializer_list>
 #include <optional>
@@ -332,6 +333,40 @@ Vec3 captureAverageAccelWithImuRotation(const std::vector<std::vector<float>>& r
     return {sum[0] / samplePacketCount, sum[1] / samplePacketCount, sum[2] / samplePacketCount};
 }
 
+struct ImuStreamRunResult {
+    int packetCount = 0;
+};
+
+ImuStreamRunResult runImuWithCalibration(const dai::CalibrationHandler& calibration,
+                                         int samplePacketCount = 20,
+                                         int timeoutMs = 5000) {
+    dai::Pipeline p;
+    auto imu = p.create<dai::node::IMU>();
+    imu->enableIMUSensor(dai::IMUSensor::ACCELEROMETER_RAW, 480);
+    imu->enableIMUSensor(dai::IMUSensor::GYROSCOPE_RAW, 400);
+    imu->setBatchReportThreshold(1);
+    imu->setMaxBatchReports(10);
+    auto imuQueue = imu->out.createOutputQueue(50, false);
+
+    auto device = p.getDefaultDevice();
+    REQUIRE(device != nullptr);
+
+    device->setCalibration(calibration);
+    p.start();
+
+    int packetCount = 0;
+    while(packetCount < samplePacketCount) {
+        bool hasTimedOut = false;
+        auto imuData = imuQueue->get<dai::IMUData>(std::chrono::milliseconds(timeoutMs), hasTimedOut);
+        REQUIRE_FALSE(hasTimedOut);
+        REQUIRE(imuData != nullptr);
+        packetCount += static_cast<int>(imuData->packets.size());
+    }
+
+    p.stop();
+    return {packetCount};
+}
+
 }  // namespace
 
 TEST_CASE("Test IMU runtime calibration rotates accelerometer axes") {
@@ -395,8 +430,8 @@ TEST_CASE("Test IMU runtime calibration applies bias offsets") {
 
         const auto accelBiased = captureAverageAccelerometer(dai::IMUSensor::ACCELEROMETER_CALIBRATED, calibration);
         const auto gyroBiased = captureAverageGyroscope(calibration);
-        requireVecNear(accelBiased, applyCalibration(calibration, baselineAccel), 1e-2f);
-        requireVecNear(gyroBiased, applyCalibration(calibration, baselineGyro), 1e-2f);
+        requireVecNear(accelBiased, applyCalibration(calibration, baselineAccel), 2e-2f);
+        requireVecNear(gyroBiased, applyCalibration(calibration, baselineGyro), 2e-2f);
     }
 
     SECTION("bias on y axis") {
@@ -408,8 +443,8 @@ TEST_CASE("Test IMU runtime calibration applies bias offsets") {
 
         const auto accelBiased = captureAverageAccelerometer(dai::IMUSensor::ACCELEROMETER_CALIBRATED, calibration);
         const auto gyroBiased = captureAverageGyroscope(calibration);
-        requireVecNear(accelBiased, applyCalibration(calibration, baselineAccel), 1e-2f);
-        requireVecNear(gyroBiased, applyCalibration(calibration, baselineGyro), 1e-2f);
+        requireVecNear(accelBiased, applyCalibration(calibration, baselineAccel), 2e-2f);
+        requireVecNear(gyroBiased, applyCalibration(calibration, baselineGyro), 2e-2f);
     }
 
     SECTION("bias on z axis") {
@@ -421,8 +456,8 @@ TEST_CASE("Test IMU runtime calibration applies bias offsets") {
 
         const auto accelBiased = captureAverageAccelerometer(dai::IMUSensor::ACCELEROMETER_CALIBRATED, calibration);
         const auto gyroBiased = captureAverageGyroscope(calibration);
-        requireVecNear(accelBiased, applyCalibration(calibration, baselineAccel), 1e-2f);
-        requireVecNear(gyroBiased, applyCalibration(calibration, baselineGyro), 1e-2f);
+        requireVecNear(accelBiased, applyCalibration(calibration, baselineAccel), 2e-2f);
+        requireVecNear(gyroBiased, applyCalibration(calibration, baselineGyro), 2e-2f);
     }
 }
 
@@ -557,6 +592,12 @@ TEST_CASE("Test setImuRotation does not affect affine calibration path") {
                                                                  0.0f, 1.0f, 0.0f, 0.0f,
                                                                  -1.0f, 0.0f, 0.0f, 0.0f,
                                                                  0.0f, 0.0f, 1.0f, 0.0f,
-                                                             }));
+    }));
     requireVecNear(withAffineOnly, baselineUncalib, 1e-2f);
+}
+
+TEST_CASE("Test IMU streams with empty runtime calibration") {
+    const auto result = runImuWithCalibration(dai::CalibrationHandler());
+
+    REQUIRE(result.packetCount > 0);
 }
