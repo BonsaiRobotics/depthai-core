@@ -7,13 +7,15 @@
 
 constexpr auto WIDTH = 640;
 constexpr auto HEIGHT = 400;
-std::shared_ptr<dai::MessageQueue> configurePipeline(bool sparse, dai::Pipeline& pipeline) {
+std::shared_ptr<dai::MessageQueue> configurePipeline(bool organized, dai::Pipeline& pipeline) {
     auto monoLeft = pipeline.create<dai::node::Camera>()->build(dai::CameraBoardSocket::CAM_B);
     auto monoRight = pipeline.create<dai::node::Camera>()->build(dai::CameraBoardSocket::CAM_C);
     auto stereo = pipeline.create<dai::node::StereoDepth>();
     auto pointcloud = pipeline.create<dai::node::PointCloud>();
 
-    pointcloud->initialConfig->setSparse(sparse);
+    if(organized) {
+        pointcloud->initialConfig->setOrganized(true);
+    }
 
     monoLeft->requestOutput(std::make_pair(WIDTH, HEIGHT))->link(stereo->left);
     monoRight->requestOutput(std::make_pair(WIDTH, HEIGHT))->link(stereo->right);
@@ -21,9 +23,13 @@ std::shared_ptr<dai::MessageQueue> configurePipeline(bool sparse, dai::Pipeline&
     return pointcloud->outputPointCloud.createOutputQueue();
 }
 
-TEST_CASE("dense pointcloud") {
+TEST_CASE("organized pointcloud") {
     dai::Pipeline pipeline;
-    auto outQ = configurePipeline(false, pipeline);
+    if(pipeline.getDefaultDevice()->getPlatform() == dai::Platform::RVC2) {
+        WARN("Skipping organized pointcloud test: PointCloud node is not supported on RVC2.");
+        return;
+    }
+    auto outQ = configurePipeline(true, pipeline);
     pipeline.start();
     for(int i = 0; i < 10; ++i) {
         auto pcl = outQ->get<dai::PointCloudData>();
@@ -39,14 +45,18 @@ TEST_CASE("dense pointcloud") {
 
 TEST_CASE("sparse pointcloud") {
     dai::Pipeline pipeline;
-    auto outQ = configurePipeline(true, pipeline);
+    if(pipeline.getDefaultDevice()->getPlatform() == dai::Platform::RVC2) {
+        WARN("Skipping sparse pointcloud test: PointCloud node is not supported on RVC2.");
+        return;
+    }
+    auto outQ = configurePipeline(false, pipeline);
     pipeline.start();
     for(int i = 0; i < 10; ++i) {
         auto pcl = outQ->get<dai::PointCloudData>();
         REQUIRE(pcl != nullptr);
-        REQUIRE(pcl->getWidth() == WIDTH);
-        REQUIRE(pcl->getHeight() == HEIGHT);
-        REQUIRE(pcl->getPoints().size() < WIDTH * HEIGHT);
+        REQUIRE(pcl->getHeight() == 1);
+        REQUIRE(pcl->getWidth() == pcl->getPoints().size());
+        REQUIRE(pcl->getPoints().size() <= WIDTH * HEIGHT);
         REQUIRE(pcl->getMinX() <= pcl->getMaxX());
         REQUIRE(pcl->getMinY() <= pcl->getMaxY());
         REQUIRE(pcl->getMinZ() <= pcl->getMaxZ());
