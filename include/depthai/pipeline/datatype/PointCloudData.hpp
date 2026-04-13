@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "depthai/common/ImgTransformations.hpp"
 #include "depthai/common/Point3f.hpp"
 #include "depthai/common/Point3fRGBA.hpp"
 #include "depthai/pipeline/datatype/Buffer.hpp"
@@ -203,6 +204,23 @@ class PointCloudData : public Buffer, public ProtoSerializable {
     PointCloudData& setInstanceNum(unsigned int instanceNum);
 
     /**
+     * Retrieves image transformation data
+     */
+    ImgTransformation& getTransformation();
+
+    /**
+     * Retrieves image transformation data (const)
+     */
+    const ImgTransformation& getTransformation() const;
+
+    /**
+     * Specifies image transformation data
+     *
+     * @param transformation transformation data
+     */
+    PointCloudData& setTransformation(const ImgTransformation& transformation);
+
+    /**
      * Recomputes the bounding box (min/max X, Y, Z) from the current point data.
      * All stored points are included regardless of their z value.
      * If the cloud is empty, all bounds are set to 0.
@@ -253,7 +271,9 @@ class PointCloudData : public Buffer, public ProtoSerializable {
     DatatypeEnum getDatatype() const override {
         return DatatypeEnum::PointCloudData;
     }
-    DEPTHAI_SERIALIZE(PointCloudData, width, height, minx, miny, minz, maxx, maxy, maxz, instanceNum, Buffer::ts, Buffer::tsDevice, Buffer::sequenceNum);
+    ImgTransformation transformation;
+
+    DEPTHAI_SERIALIZE(PointCloudData, width, height, minx, miny, minz, maxx, maxy, maxz, instanceNum, transformation, Buffer::ts, Buffer::tsDevice, Buffer::sequenceNum);
 };
 
 }  // namespace dai

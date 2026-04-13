@@ -832,6 +832,7 @@ void PointCloud::run() {
         pc->setTimestampDevice(depthFrame->getTimestampDevice());
         pc->setSequenceNum(depthFrame->getSequenceNum());
         pc->setInstanceNum(depthFrame->getInstanceNum());
+        pc->setTransformation(depthFrame->getTransformation());
 
         if(colorFrame) {
             processColorized(depthFrame, colorFrame, pc);

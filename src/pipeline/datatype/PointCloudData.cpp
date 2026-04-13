@@ -115,6 +115,19 @@ PointCloudData& PointCloudData::setInstanceNum(unsigned int instanceNum) {
     return *this;
 }
 
+ImgTransformation& PointCloudData::getTransformation() {
+    return transformation;
+}
+
+const ImgTransformation& PointCloudData::getTransformation() const {
+    return transformation;
+}
+
+PointCloudData& PointCloudData::setTransformation(const ImgTransformation& transformation) {
+    this->transformation = transformation;
+    return *this;
+}
+
 PointCloudData& PointCloudData::setWidth(unsigned int width) {
     this->width = width;
     return *this;
