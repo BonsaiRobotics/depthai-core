@@ -158,6 +158,7 @@ class PipelineImpl : public std::enable_shared_from_this<PipelineImpl> {
 
     // Build-time automatic calibration policy for implicit AutoCalibration node creation.
     PipelineAutoCalibrationMode autoCalibrationMode = PipelineAutoCalibrationMode::ON_START;
+    bool autoCalibrationModeSetByApi = false;
 
     // Output queues
     std::vector<std::shared_ptr<MessageQueue>> outputQueues;
