@@ -545,6 +545,7 @@ void DetectionParser::decodeMobilenet(dai::NNData& nnData, dai::ImgDetections& o
         }
     }
 
+#ifdef DEPTHAI_XTENSOR_SUPPORT
     auto tensorData = nnData.getTensor<float>(tensorName);
     maxDetections = tensorData.size() / 7;
     if(static_cast<int>(tensorData.size()) < maxDetections * 7) {
@@ -586,6 +587,11 @@ void DetectionParser::decodeMobilenet(dai::NNData& nnData, dai::ImgDetections& o
             outDetections.detections.push_back(d);
         }
     }
+#else
+    (void)maxDetections;
+    (void)tensorName;
+    logger->error("Mobilenet decoding requires xtensor support (DEPTHAI_XTENSOR_SUPPORT=ON)");
+#endif
 }
 
 void DetectionParser::decodeYolo(dai::NNData& nnData, dai::ImgDetections& outDetections) {

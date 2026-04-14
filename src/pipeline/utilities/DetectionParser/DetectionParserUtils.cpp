@@ -19,7 +19,9 @@
 #include <optional>
 #include <string>
 #include <vector>
+#ifdef DEPTHAI_XTENSOR_SUPPORT
 #include <xtensor/core/xtensor_forward.hpp>
+#endif
 
 #include "DetectionParserUtils.hpp"
 #include "depthai/common/Keypoint.hpp"
